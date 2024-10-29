@@ -107,7 +107,7 @@ pub fn trigger_blueprint_animation_markers_events(
             let animation_player = animation_players.get(player_link.0).unwrap();
             let (animation_infos, animation_markers) = animation_infos.get(infos_link.0).unwrap();
 
-            if animation_player.animation_is_playing(*node_index) {
+            if animation_player.animation_is_playing(*node_index) && animation_infos.animations.len() > 0 {
                 if let Some(animation) = animation_player.animation(*node_index) {
                     // animation.speed()
                     // animation.completions()
@@ -115,14 +115,18 @@ pub fn trigger_blueprint_animation_markers_events(
                         animations.named_animations.get(animation_name)
                     {
                         if let Some(animation_clip) = animation_clips.get(animation_clip_handle) {
+                            // find length/duration
                             let animation_length_seconds = animation_clip.duration();
-                            let animation_length_frames =
-                                animation_infos // FIXME: horribly inneficient
-                                    .animations
-                                    .iter()
-                                    .find(|anim| &anim.name == animation_name)
-                                    .unwrap()
-                                    .frames_length;
+                            let anim_info_opt = animation_infos // FIXME: horribly inneficient
+                                .animations
+                                .iter()
+                                .find(|anim| &anim.name == animation_name);
+                            if anim_info_opt.is_none() {
+                                warn!("Couldn't find animation info for animation name {:?} in animations {:?}.", animation_name, animation_infos.animations);
+                                break;
+                            }
+                            let anim_info = anim_info_opt.unwrap();
+                            let animation_length_frames = anim_info.frames_length;
 
                             // TODO: we also need to take playback speed into account
                             let time_in_animation = animation.elapsed()
